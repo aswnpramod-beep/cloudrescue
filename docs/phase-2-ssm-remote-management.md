@@ -298,11 +298,7 @@ ap-south-1
 
 \# 6. Check Whether the SSM Agent Was Installed
 
-
-
 \## Command
-
-
 
 ```bash
 
@@ -310,19 +306,13 @@ sudo systemctl status amazon-ssm-agent
 
 ```
 
-
-
 \## Actual Output
-
-
 
 ```text
 
 Unit amazon-ssm-agent.service could not be found.
 
 ```
-
-
 
 \## Explanation
 
@@ -934,7 +924,247 @@ No output returned.
 
 The EC2 instance uses IMDSv2, which requires an authentication token to access instance metadata. Therefore, the region must be retrieved using an IMDSv2 token.
 
+## 5. Verify SSM Agent
 
+### Command
 
+```bash
+sudo systemctl status amazon-ssm-agent
+```
 
+### Result
+
+The SSM Agent service was initially not available on the RHEL instance.
+
+The agent was then installed using the official AWS RPM package.
+
+---
+## 6. Install and Configure SSM Agent
+
+The SSM Agent package was initially searched for using DNF, but the package was not available in the enabled RHEL repositories.
+
+### Install
+
+```bash
+sudo dnf install -y ./amazon-ssm-agent.rpm
+```
+
+### Start the Agent
+
+```bash
+sudo systemctl start amazon-ssm-agent
+```
+
+### Enable at Boot
+
+```bash
+sudo systemctl enable amazon-ssm-agent
+```
+
+### Verify
+
+```bash
+sudo systemctl is-active amazon-ssm-agent
+```
+
+### Actual Output
+
+```text
+active
+```
+
+The SSM Agent was successfully installed, started, and configured to start automatically during system boot.
+
+---
+
+## 7. Create IAM Role
+
+An IAM role was created for the EC2 instance.
+
+### Role Name
+
+```text
+CloudRescue-EC2-SSM-Role
+```
+
+### Trusted Entity
+
+```text
+EC2
+```
+
+### Attached Policy
+
+```text
+AmazonSSMManagedInstanceCore
+```
+
+This policy allows the SSM Agent to communicate with AWS Systems Manager.
+
+The IAM role was then attached to the CloudRescue EC2 instance.
+
+---
+
+## 8. Troubleshooting IAM Role Access
+
+Initially, the SSM Agent logs showed:
+
+```text
+no EC2 instance role found
+```
+
+The cause was that the IAM role had not yet been attached to the EC2 instance.
+
+After attaching the IAM role, the SSM Agent was restarted:
+
+```bash
+sudo systemctl restart amazon-ssm-agent
+```
+
+The agent successfully obtained credentials from the EC2 instance role and connected to AWS Systems Manager.
+
+---
+
+## 9. Verify Systems Manager Managed Node
+
+The EC2 instance was checked in:
+
+```text
+AWS Systems Manager
+        ↓
+Fleet Manager
+        ↓
+Managed Nodes
+```
+
+### Result
+
+```text
+Managed Nodes: 1
+Ping Status: Online
+Platform: Linux
+Operating System: Red Hat Enterprise Linux
+```
+
+The CloudRescue EC2 instance successfully registered as an AWS Systems Manager managed node.
+
+---
+
+#### 10. SSM Setup Result
+
+Phase 2 successfully established secure remote management of the CloudRescue RHEL EC2 instance using AWS Systems Manager.
+
+The following tasks were completed:
+
+```text
+[✓] RHEL operating system verified
+[✓] System architecture verified
+[✓] AWS Region identified using IMDSv2
+[✓] SSM Agent installed
+[✓] SSM Agent started
+[✓] SSM Agent enabled at boot
+[✓] IAM role created
+[✓] IAM role attached to EC2
+[✓] SSM Agent connected successfully
+[✓] EC2 registered as a Managed Node
+[✓] Managed Node status: Online
+```
+
+### Skills Practiced
+
+- RHEL Linux administration
+- `systemctl` service management
+- AWS EC2 Instance Metadata Service
+- IMDSv2 authentication
+- IAM roles and policies
+- AWS Systems Manager
+- SSM Agent installation and configuration
+- Troubleshooting IAM and SSM connectivity
+- Secure remote management without direct SSH dependency
+
+---
+
+## 11. Test Remote Linux Command Execution
+
+AWS Systems Manager Run Command was used to execute Linux commands on the RHEL EC2 instance without using SSH.
+### 11.1 Verify Remote Command Execution
+
+#### Command
+
+```bash
+hostname
+
+### Actual Output
+
+ip-172-31-36-246.ap-south-1.compute.internal
+
+### 11.2 Verify Apache Service
+
+#### Command
+
+```bash
+systemctl is-active httpd
+```
+
+#### Actual Output
+
+```text
+active
+```
+
+#### Result
+
+The command was successfully executed through AWS Systems Manager.
+
+The Apache HTTP Server was confirmed to be running.
+
+```text
+Status: Success
+Response Code: 0
+```
+## 11.3 Application Health Check Through Run Command
+
+### Command
+
+```bash
+curl -f http://localhost/health
+```
+
+### Actual Output
+
+```text
+OK
+```
+
+### Result
+
+The CloudRescue application health endpoint was successfully checked remotely using AWS Systems Manager Run Command.
+
+The successful `OK` response confirmed that the application was healthy.
+
+---
+
+## 12. Phase 2 Final Result
+
+Phase 2 successfully implemented secure remote management of the CloudRescue RHEL EC2 instance using AWS Systems Manager.
+
+The following remote tests were completed successfully:
+
+1. Verify OS
+2. Verify Architecture
+3. Identify Region
+4. Install SSM Agent
+5. Configure IAM Role
+6. Verify Managed Node
+7. Test Run Command
+
+### Final Result
+
+The CloudRescue RHEL EC2 instance is successfully registered as an AWS Systems Manager Managed Node.
+
+Linux commands can now be executed remotely through AWS Systems Manager without depending on SSH.
+
+The Apache service and CloudRescue application health endpoint were successfully verified remotely.
+
+**Phase 2 completed successfully.**
 

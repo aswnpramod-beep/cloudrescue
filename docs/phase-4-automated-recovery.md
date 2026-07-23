@@ -530,5 +530,71 @@ Return the application to a healthy state.
 
 
 
+Phase 4 – Self-Healing and Cloud Monitoring
+Objective
+
+The objective of Phase 4 was to enhance CloudRescue with automated recovery and CloudWatch monitoring capabilities.
+
+Implementation
+
+A health-check script was created to monitor the Apache HTTPD service. When Apache was running, the application was marked as HEALTHY.
+
+When Apache was stopped, CloudRescue detected the failure and automatically:
+
+Detected that Apache was not running.
+Started the recovery process.
+Restarted the Apache service.
+Verified that the service was running again.
+Recorded the recovery event in the recovery log.
+
+The recovery process was tested successfully by manually stopping Apache.
+
+CloudWatch Monitoring
+
+The CloudRescue recovery log was connected to Amazon CloudWatch Logs.
+
+A metric filter was created to detect the following recovery event:
+
+Apache is not running. Attempting recovery...
+
+A custom CloudWatch metric was created:
+
+Namespace: CloudRescue
+Metric Name: RecoveryAttempt
+
+A CloudWatch alarm was then created to trigger when:
+
+RecoveryAttempt >= 1
+SNS Notification
+
+The CloudWatch alarm was connected to an Amazon SNS topic:
+
+CloudRescue-Alerts
+
+The SNS email subscription was confirmed successfully, and an email notification was received when the CloudWatch alarm entered the ALARM state.
+
+Phase 4 Result
+
+CloudRescue successfully became a basic self-healing and monitoring system.
+
+The complete workflow is:
+
+Apache Failure
+      ↓
+CloudRescue Detects Failure
+      ↓
+Automatic Recovery
+      ↓
+Apache Restarted
+      ↓
+Recovery Logged
+      ↓
+CloudWatch Metric Created
+      ↓
+CloudWatch Alarm Triggered
+      ↓
+SNS Email Notification Sent
+Phase 4 Status
+
 Phase 4 completed successfully.
 
